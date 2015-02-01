@@ -3,6 +3,7 @@
 open System
 open System.Threading.Tasks
 open System.Collections.Generic
+open System.Collections.Concurrent
 
     module Tier1 = 
         type Agent<'T> = MailboxProcessor<'T>
@@ -183,7 +184,7 @@ open System.Collections.Generic
             int64 divisors.Length
         
         let memorize f = 
-            let cache = new Dictionary<_,_>()
+            let cache = new Dictionary<_,_>(1000000)
             (fun x ->
                 match cache.TryGetValue x with
                 | true, v -> 
@@ -339,3 +340,22 @@ open System.Collections.Generic
         //-----------------------------------------------------------------------------------------
         //   Problem 14
         //-----------------------------------------------------------------------------------------
+        let even n = n % 2 = 0
+        let odd n = not (even n)
+
+        let rec memSequence =
+            memorize (fun generator s ->
+                if generator = 1 then s + 1
+                else
+                    let state = s+1
+                    if even generator then memSequence(generator/2) state
+                    else memSequence(3*generator + 1) state   )
+
+        memSequence 999999 0
+
+        let problem14 =
+            //Async.Parallel [for i in 1..999999 -> async {return (i, (memSequence i 0)) }] |> Async.RunSynchronously |> Array.maxBy snd |> fst
+            //[1..250000] |> List.map ( (fun idx -> (idx, (memSequence idx 0) ) ))
+            Array.init 100000 (fun idx -> (idx+1, (memSequence (idx+1) 0)))
+
+        // (fun idx -> (idx, (memSequence idx) ))
