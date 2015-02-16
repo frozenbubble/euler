@@ -9,8 +9,20 @@ open System.Collections.Concurrent
         type Agent<'T> = MailboxProcessor<'T>
         type long = int64
 
+
+
+
+        //-----------------------------------------------------------------------------------------
+        //   Problem 1
+        //-----------------------------------------------------------------------------------------
         let problem1 = [1 .. 999] |> List.filter(fun x -> x % 3 = 0 || x % 5 = 0) |> List.fold(fun acc x -> acc + x) 0 
 
+
+
+
+        //-----------------------------------------------------------------------------------------
+        //   Problem 2
+        //-----------------------------------------------------------------------------------------
         let problem2 =
             let rec fibutil num state target acc = 
                 if num > target then acc
@@ -19,13 +31,11 @@ open System.Collections.Concurrent
             fibutil 1 1 4000000 0
 
 
-//        let quadSieve n =
-//            let r = sqrt(n)
 
-        let problem3 = 0
-
-
-
+        
+        //-----------------------------------------------------------------------------------------
+        //   Problem 4
+        //-----------------------------------------------------------------------------------------
         let rec cartesianProd xl yl = 
             match xl, yl with
             | x::xs, y::ys -> ((x*y)::List.map (fun t -> x*t) ys) @ cartesianProd xs yl
@@ -39,7 +49,11 @@ open System.Collections.Concurrent
             (cartesianProd [100 .. 999] [100 .. 999]) |> List.filter (fun x -> isPalindrom x) |> List.max
 
 
-            
+
+
+        //-----------------------------------------------------------------------------------------
+        //   Problem 5
+        //-----------------------------------------------------------------------------------------
         let rec gcd(x: int64, y: int64) = 
             if x = y then x
             else if x > y then gcd(x-y, y)
@@ -53,6 +67,10 @@ open System.Collections.Concurrent
 
 
 
+
+        //-----------------------------------------------------------------------------------------
+        //   Problem 6
+        //-----------------------------------------------------------------------------------------
         let problem6 = 
             let numbers = [1..100]
             let sum list = List.fold (fun state x -> state + x) 0 list
@@ -62,11 +80,11 @@ open System.Collections.Concurrent
             sumOfNumbers * sumOfNumbers - sumOfSquares
 
 
-        
-        let problem7 = 0
 
 
-
+        //-----------------------------------------------------------------------------------------
+        //   Problem 8
+        //-----------------------------------------------------------------------------------------
         let bigNum = 
             ("731671765313306249192251196744265747423553491949349698352031277450632623957831801698480186947885184385861560789112949495459501737958331952853208805511" +
              "125406987471585238630507156932909632952274430435576689664895044524452316173185640309871112172238311362229893423380308135336276614282806444486645238749" +
@@ -88,14 +106,6 @@ open System.Collections.Concurrent
                 then largestProduct <- window
 
             largestProduct
-
-
-
-        let problem9 = 0
-
-
-
-        let problem10 = 0
 
 
 
@@ -184,25 +194,32 @@ open System.Collections.Concurrent
             int64 divisors.Length
         
         let memorize f = 
-            let cache = new Dictionary<_,_>(1000000)
+            let cache = new System.Collections.Generic.Dictionary<_,_>()
             (fun x ->
+                match cache.TryGetValue x with
+                | true, v -> v
+                | _ -> let v = f x in cache.Add(x, v); v)
+
+        let memorize2 f = 
+            let cache = new Dictionary<_,_>()
+            (fun x s ->
                 match cache.TryGetValue x with
                 | true, v -> 
                     v
-                | _ -> let v = f x
+                | _ -> let v = (f x s)
                        cache.Add(x, v)
                        v)
 
         let rec triangleMem  = 
-            memorize (fun n s -> if n = 1L then s else triangleMem(n-1L) (s+n))
+            memorize (fun n -> if n = 1L then 1L else  n + triangleMem(n-1L))
             
         let problem12 =
             let mutable i = 2L
             let mutable num = 1L
 
             while divisorsOver500 num < 500L do
-               printfn "%d" num
-               num <- triangleMem i 1L
+               //printfn "%d" num
+               num <- triangleMem i
                i <- i+1L
                 
             num
@@ -340,22 +357,171 @@ open System.Collections.Concurrent
         //-----------------------------------------------------------------------------------------
         //   Problem 14
         //-----------------------------------------------------------------------------------------
-        let even n = n % 2 = 0
+        let even (n: int64) = n % 2L = 0L
         let odd n = not (even n)
 
-        let rec memSequence =
-            memorize (fun generator s ->
-                if generator = 1 then s + 1
-                else
-                    let state = s+1
-                    if even generator then memSequence(generator/2) state
-                    else memSequence(3*generator + 1) state   )
+        let memoRec f = 
+            let d = new System.Collections.Generic.Dictionary<_,_>()
+            let rec g x = 
+                match d.TryGetValue x with
+                | true, v -> v
+                | _ ->let v = f g x in d.Add(x, v); v
+            g
 
-        memSequence 999999 0
+        let collatzLong = 
+            memoRec (fun f n -> 
+                if n <= 1L then 0
+                else 1 + f (if (even n) then n/2L else n * 3L + 1L) )
 
-        let problem14 =
-            //Async.Parallel [for i in 1..999999 -> async {return (i, (memSequence i 0)) }] |> Async.RunSynchronously |> Array.maxBy snd |> fst
-            //[1..250000] |> List.map ( (fun idx -> (idx, (memSequence idx 0) ) ))
-            Array.init 100000 (fun idx -> (idx+1, (memSequence (idx+1) 0)))
+        let problem14 = 
+            {0L .. 999999L}
+            |> Seq.map (fun i -> i, collatzLong i)
+            |> Seq.maxBy snd
+            |> fst
+        
 
-        // (fun idx -> (idx, (memSequence idx) ))
+
+        //-----------------------------------------------------------------------------------------
+        //   Problem 15
+        //-----------------------------------------------------------------------------------------
+        let factorial (n: long) =
+            if n = 0L then 1L
+            else
+                let mutable  fac = 1L
+                for i in 1L..n do fac <- fac * i
+                fac
+
+        let ncr n k = (factorial n) / (( factorial k) * (factorial(n-k)) )
+
+        let rec pascal r c = ncr r c 
+
+        //let problem15 = pascal 40L 20L
+        // wolframalpha
+        //  /40\
+        //  \20/
+
+
+
+        //-----------------------------------------------------------------------------------------
+        //   Problem 16
+        //-----------------------------------------------------------------------------------------
+        let mutable number = Array.init 304 (fun i -> if i = 0 then 1 else 0)
+
+        let double (num: int array) = 
+            let mutable carry = 0
+            for i in 0..num.Length - 1 do
+                num.[i] <- carry + 2 * num.[i]
+                if num.[i] >= 10 then
+                    num.[i] <- num.[i] - 10
+                    carry <- 1
+                else carry <- 0
+
+        let problem16 = 
+            for i in 1..1000 do
+                double number
+            number|> Array.sum
+
+
+
+        //-----------------------------------------------------------------------------------------
+        //   Problem 17
+        //-----------------------------------------------------------------------------------------
+        let digitToString = 
+            let table = [|"One"; "Two"; "Three"; "Four"; "Five"; "Six"; "Seven"; "Eight"; "Nine";|]
+            (fun digit -> 
+                if digit < 1 || digit > 9 then failwith "Not a valid digit"
+                else table.[digit - 1])
+
+        let teenToString = 
+            let table = [|"Ten"; "Eleven"; "Twelve"; "Thirteen"; "Fourteen"; "Fifteen"; "Sixteen"; "Seventeen"; "Eighteen"; "Nineteen";|]
+            (fun number -> 
+                table.[number - 10])
+
+        let tensToString = 
+            let table = [|"Twenty"; "Thirty"; "Forty"; "Fifty"; "Sixty"; "Seventy"; "Eighty"; "Ninety";|]
+            (fun number -> 
+                table.[number/10 - 2])
+
+        let hundredToString number = 
+            (digitToString (number / 100)) + "Hundred" + if number % 100 <> 0 then "And" else ""
+
+        let rec numToString (number: int) (state: System.Text.StringBuilder) =
+            printfn "%s" (state.ToString())
+            if number = 0 then state.ToString()
+            else
+                if number >= 100 then numToString (number-(100*(number/100))) (state.Append(hundredToString number))
+                else if number >= 20 then numToString (number-(10*(number/10))) (state.Append(tensToString number))
+                else if number >= 10 then numToString 0 (state.Append(teenToString number))
+                else numToString 0 (state.Append(digitToString number))
+
+        let problem17 = 
+            ([1..999] |> List.map (fun k -> (numToString k (new System.Text.StringBuilder())).Length) 
+            |> List.sum) + "OneThousand".Length
+
+
+
+
+        //-----------------------------------------------------------------------------------------
+        //   Problem 18: longest path in a special DAG
+        //-----------------------------------------------------------------------------------------
+        let topOrder = [|[|75|];
+                         [|95; 64|];
+                         [|17; 47; 82|];
+                         [|18; 35; 87; 10|];
+                         [|20; 04; 82; 47; 65|];
+                         [|19; 01; 23; 75; 03; 34|];
+                         [|88; 02; 77; 73; 07; 63; 67|];
+                         [|99; 65; 04; 28; 06; 16; 70; 92|];
+                         [|41; 41; 26; 56; 83; 40; 80; 70; 33|];
+                         [|41; 48; 72; 33; 47; 32; 37; 16; 94; 29|];
+                         [|53; 71; 44; 65; 25; 43; 91; 52; 97; 51; 14|];
+                         [|70; 11; 33; 28; 77; 73; 17; 78; 39; 68; 17; 57|];
+                         [|91; 71; 52; 38; 17; 14; 91; 43; 58; 50; 27; 29; 48|];
+                         [|63; 66; 04; 68; 89; 53; 67; 30; 73; 16; 69; 87; 40; 31|];
+                         [|04; 62; 98; 27; 23; 09; 70; 98; 73; 93; 38; 53; 60; 04; 23|]|]      
+
+        let problem18 = 
+            let paths = Array.map (fun row -> Array.map (fun x -> -1) row) topOrder
+            
+            let getLongestPath (row, col) = paths.[row].[col]
+
+            let nextNode (row, column) (matrix: int array array) = 
+                if column < matrix.[row].Length - 1 then Some (row, column + 1)
+                else if row < matrix.Length - 1 then Some (row + 1, 0)
+                else None
+
+            let getNeighBours (row, col) (matrix: int array array) =
+                if row < matrix.Length - 1 then 
+                    Some (row + 1, col), Some (row + 1, col + 1)
+                else None, None
+
+            let updateNode (node: (int*int) option) weight = 
+                match node with
+                | Some (row, col) ->
+                     if weight + topOrder.[row].[col] > paths.[row].[col] then 
+                         printf "updating node: %d, %d" row col
+                         paths.[row].[col] <- weight + topOrder.[row].[col]
+                | None -> ()
+
+            let rec traverse (root: (int*int) option) (nodes: int[][]) = 
+                match root with
+                | Some (row, col) -> 
+                    printfn "Processing node: %d, %d" row col
+                    let neighbours = getNeighBours (row, col) nodes
+                    let left = (fst neighbours)
+                    let right = (snd neighbours)
+                    updateNode left (getLongestPath (row, col))
+                    updateNode right (getLongestPath (row, col))
+                    traverse (nextNode (row, col) nodes) nodes
+                | None -> ()
+            
+            updateNode (Some(0, 0)) 75
+            traverse (Some(0, 0)) topOrder
+
+            (paths |> Array.collect (id) |> Array.max) - 75
+
+
+
+        //-----------------------------------------------------------------------------------------
+        //   Problem 19
+        //-----------------------------------------------------------------------------------------
