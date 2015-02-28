@@ -523,5 +523,83 @@ open System.Collections.Concurrent
 
 
         //-----------------------------------------------------------------------------------------
-        //   Problem 19
+        //   Problem 19 Counting sundays
         //-----------------------------------------------------------------------------------------
+        let sundays = Seq.toList (seq {for i in 1 .. 365025 do if i% 7 =6 then yield i })
+
+        let daysIn month = 
+            let mutable dayCount = 0
+            match (month%12) with
+            | 1 | 3 | 5 | 7 | 8 | 10 | 0 -> dayCount <- 31
+            | 4 | 6 | 9 | 11 -> dayCount <- 30
+            | _-> dayCount <- 28
+            
+            if month % 48 = 38 then dayCount <- dayCount + 1
+            dayCount
+
+        let firstDays = 
+            Seq.unfold (fun (month, acc) -> 
+                let days = daysIn(month)
+                Some (acc + days + 1, (month + 1, days + acc))) (1, 0)
+
+        let rec merge (xl: int list, yl: int list): int list = 
+            match (xl, yl) with
+            | ([], yl) -> []
+            | (xl, []) -> []
+            | (x::xs, y::ys) -> 
+                if x < y then merge(xs, y::ys)
+                else if x > y then merge(x::xs, ys)
+                else x::merge(xs, ys)
+
+        let problem19 = 
+            let firsts = firstDays |> Seq.take 1200 |> Seq.toList
+            merge(sundays, firsts).Length
+
+
+
+
+        //-----------------------------------------------------------------------------------------
+        //   Problem 20 Factorial digit sum
+        //-----------------------------------------------------------------------------------------  
+        type bint = System.Numerics.BigInteger
+
+        let fac (n: bint) = 
+            let rec facUtil (n: bint) (s:bint) =
+                if n = 1I then s
+                else facUtil (n-1I) (n*s)
+            facUtil n 1I
+
+        let problem20 = 
+            let sumDigits (num: char array) = 
+                let mutable sum = 0
+                for digit in num do
+                    sum <- sum + (digit |> string |> Int32.TryParse |> snd )
+                sum
+
+            (fac 100I).ToString().ToCharArray() |> sumDigits
+
+
+
+
+        //-----------------------------------------------------------------------------------------
+        //   Problem 21 Amicable numbers
+        //-----------------------------------------------------------------------------------------
+        let divisorsOf n = 
+            let mutable movingLimit = n
+            let mutable divisors = []
+            let mutable i = 1
+
+            while i <= n && i <= movingLimit do
+                if n%i = 0 then 
+                    divisors <- i::(n/i)::divisors
+                    movingLimit <- n/i
+                    
+                i <- i+1
+
+            divisors |> Seq.filter (fun x -> x <= n) |> Seq.distinctBy id
+
+        let divisorSumOf n = divisorsOf n |> Seq.sum
+
+        let problem22 = 
+            let memory = new System.Collections.Generic.Dictionary<int, int>()
+            0
