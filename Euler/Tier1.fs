@@ -593,13 +593,25 @@ open System.Collections.Concurrent
                 if n%i = 0 then 
                     divisors <- i::(n/i)::divisors
                     movingLimit <- n/i
-                    
                 i <- i+1
-
-            divisors |> Seq.filter (fun x -> x <= n) |> Seq.distinctBy id
+            divisors |> Seq.filter (fun x -> x < n) |> Seq.distinctBy id
 
         let divisorSumOf n = divisorsOf n |> Seq.sum
 
-        let problem22 = 
-            let memory = new System.Collections.Generic.Dictionary<int, int>()
-            0
+        let memory = new System.Collections.Generic.Dictionary<int, int>()
+        
+        let rec amicables (limit, n, list) =
+            if n > limit then list
+            else
+                let divSum = (divisorSumOf n)
+                memory.Add(n, divSum)
+
+                match memory.TryGetValue(divSum) with
+                | true, v -> 
+                    if v = n then amicables(limit, (n+1), ((n, divSum)::list))
+                    else amicables(limit, (n+1), list)
+                | _ -> amicables(limit, (n+1), list)
+
+        let problem22= 
+            memory.Clear()
+            amicables(10000, 1, []) |> List.collect (fun (a, b) -> if a <> b then [a; b] else []) |> Seq.sum
