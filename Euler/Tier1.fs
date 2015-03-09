@@ -612,6 +612,70 @@ open System.Collections.Concurrent
                     else amicables(limit, (n+1), list)
                 | _ -> amicables(limit, (n+1), list)
 
-        let problem22= 
+        let problem21= 
             memory.Clear()
             amicables(10000, 1, []) |> List.collect (fun (a, b) -> if a <> b then [a; b] else []) |> Seq.sum
+
+
+
+
+        //-----------------------------------------------------------------------------------------
+        //   Problem 22 Names scores
+        //-----------------------------------------------------------------------------------------
+        let names = 
+            let client = new System.Net.WebClient()
+            client.DownloadString("https://projecteuler.net/project/resources/p022_names.txt").Replace("\"", "").Split(',')
+                |> Array.map (fun (s: string) -> s.Trim())
+                |> Array.sort |> Array.map (fun s -> s.ToUpper().ToCharArray() |> Array.sumBy (fun c -> int(c) - int('A') + 1))
+
+        let problem22 = Array.map2 (fun n s -> n * s) names [|1..names.Length|] |> Array.sum
+
+
+
+
+        //-----------------------------------------------------------------------------------------
+        //   Problem 23 Non-abundant sums  TODO
+        //-----------------------------------------------------------------------------------------
+        let abdundant(n) = divisorSumOf(n) > n
+
+        let sumPairsOf(n) = [|1..n|] |> Array.map (fun i -> (n-i, i))
+
+        let bothAbdundant(x, y) = abdundant(x) && abdundant(y)
+
+        let abdundantPairs(n) = sumPairsOf(n) |> Array.filter bothAbdundant
+
+        let problem23 = 0
+
+
+
+
+        //-----------------------------------------------------------------------------------------
+        //   Problem 24 Lexicographic permutations
+        //-----------------------------------------------------------------------------------------
+        let digits = [|0..9|]
+        let factors = digits |> Array.map (fun n -> factorial(int64(n)+1L) |> int32) |> Array.rev
+        let perms = Array.init 10 (fun i -> 0)
+
+        let findPerm limit =
+            let mutable x0 = 0
+            for i in 0..9 do
+                perms.[i] <- (limit - x0) / factors.[i]
+                x0 <- x0 + perms.[i] * factors.[i]
+
+            perms |> Array.toList
+
+        let removeElement arr idx = [(Array.sub arr 0 idx); (Array.sub arr (idx+1) (arr.Length-idx-1))] |> Array.concat
+
+        let rec permsToDigits perms available digits = 
+            match perms with
+            | [] -> List.concat [(digits |> List.rev); (Array.toList available)]
+            | head::tail -> permsToDigits tail (removeElement available head) (available.[head]::digits)
+
+        let problem24 = permsToDigits (findPerm(999999) |> List.tail) digits []
+
+
+
+
+        //-----------------------------------------------------------------------------------------
+        //   Problem 25 1000-digit Fibonacci number
+        //-----------------------------------------------------------------------------------------
